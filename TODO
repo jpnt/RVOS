@@ -1,0 +1,14 @@
+TODO
+* como emular no qemu, escolher placa a emular
+* qual ficheiros é para sacar do freertos
+* como testar o performance e ver o overhead das syscalls, interrupt, context switch. ver livro
+* qual estrutura de dados escolher
+* analisar o cpu com detalhe e ver qual o tamanho da cache
+* determinar se ao dar fetch dos dados "cabe" na cache e por sua vez se está otimizado
+
+* documentar cada passo
+* fazer uma apresentação sobre o que se concluiu
+
+NOTA
+* a maior parte desta informação encontra-se no proprio site do freertos, é muito completo
+* adicionalmente, ver outros projetos e como outras pessoas abordaram o mesmo problema
