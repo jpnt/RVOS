@@ -6,8 +6,11 @@
     * To cross-compile files to RISC-V on x86_64
     * https://github.com/riscv-collab/riscv-gnu-toolchain
     * Compile riscv toolchain linked to newlib (C library for embedded systems).
-        * ./configure --prefix=/opt/riscv --enable-multilib --with-multilib-generator="rv32i-ilp32--;rv32im-ilp32--;rv32imac-ilp32--;rv64gc-lp64d--" --with-cmodel=medany
-        * sudo make -j$(nproc)
+    ```sh
+    ./configure --prefix=/opt/riscv --enable-multilib --with-multilib-generator=\
+        "rv32i-ilp32--;rv32im-ilp32--;rv32imac-ilp32--;rv64gc-lp64d--" --with-cmodel=medany
+    make -j$(nproc)
+    ```
     * Verify multilib support: /opt/riscv/bin/riscv64-unknown-elf-gcc -print-multi-lib
 
 * Install QEMU
@@ -28,16 +31,17 @@
       FreeRTOSv202212.01 was the version used.
     * Source code organization: https://www.freertos.org/a00017.html
 
+## 3. Compiling FreeRTOS and running it on QEMU
+
 * Test a demo first
-    * FreeRTOSv202212.01/FreeRTOS/Demo/RISC-V-Qemu-virt_GCC
-    * or FreeRTOSv202212.01/FreeRTOS/Demo/RISC-V_RV32_QEMU_VIRT_GCC
+    * Change directory to FreeRTOSv202212.01/FreeRTOS/Demo/RISC-V_RV32_QEMU_VIRT_GCC
     * Edit Makefile and set toolchain if necessary, then compile. Instructions at README.md
         * If error: main.c:53: Error: unrecognized opcode `csrw mtvec,a5', extension `zicsr' required
             * Change in Makefile: `-march=rv32imac` to `-march=rv32imac_zicsr`
-    * qemu-system-riscv32 -nographic -machine virt -net none \
+    * Run on QEMU
+    ```sh
+    qemu-system-riscv32 -nographic -machine virt -net none \
         -chardev stdio,id=con,mux=on -serial chardev:con \
         -mon chardev=con,mode=readline -bios none \
         -smp 4 -kernel ./build/gcc/output/RTOSDemo.elf
-
-## 3. Real hardware platform to be emulated
-
+    ```
