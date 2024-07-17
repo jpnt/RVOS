@@ -1,6 +1,6 @@
 # Installing FreeRTOS for RISC-V on x86_64 Linux using QEMU
 
-## 0. Prerequisites
+## 1. Prerequisites
 
 * Install RISC-V GNU toolchain
     * To cross-compile files to RISC-V on x86_64
@@ -32,8 +32,12 @@
     * FreeRTOSv202212.01/FreeRTOS/Demo/RISC-V-Qemu-virt_GCC
     * or FreeRTOSv202212.01/FreeRTOS/Demo/RISC-V_RV32_QEMU_VIRT_GCC
     * Edit Makefile and set toolchain if necessary, then compile. Instructions at README.md
-    * If error: main.c:53: Error: unrecognized opcode `csrw mtvec,a5', extension `zicsr' required
-        * Change in Makefile: `-march=rv32imac` to `-march=rv32imac_zicsr`
+        * If error: main.c:53: Error: unrecognized opcode `csrw mtvec,a5', extension `zicsr' required
+            * Change in Makefile: `-march=rv32imac` to `-march=rv32imac_zicsr`
+    * qemu-system-riscv32 -nographic -machine virt -net none \
+        -chardev stdio,id=con,mux=on -serial chardev:con \
+        -mon chardev=con,mode=readline -bios none \
+        -smp 4 -kernel ./build/gcc/output/RTOSDemo.elf
 
 ## 3. Real hardware platform to be emulated
 
