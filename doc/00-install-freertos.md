@@ -2,7 +2,7 @@
 
 ## 1. Prerequisites
 
-* Install RISC-V GNU toolchain
+* **Install RISC-V GNU toolchain**
     * To cross-compile files to RISC-V on x86_64
     * https://github.com/riscv-collab/riscv-gnu-toolchain
     * Compile riscv toolchain linked to newlib (C library for embedded systems).
@@ -13,10 +13,11 @@
     make -j$(nproc)
     ```
     * Verify multilib support: /opt/riscv/bin/riscv64-unknown-elf-gcc -print-multi-lib
-    * *Note*: If using WSL you make encounter the following error message: /bin/bash^M: bad interpreter: No such file or directory
-    This means that the shell script file has wrong line endings, follow one of the possible fixes outlined in this link: https://www.howtogeek.com/884769/bad-interpreter-no-such-file-or-directory-linux-error/  
-<br>
-* Install QEMU
+    * *Note*: If using WSL you make encounter the following error message: /bin/bash^M: bad interpreter: No such file or directory.
+    
+         * This means that the shell script file has wrong line endings, follow one of the possible fixes outlined in this link: https://www.howtogeek.com/884769/bad-interpreter-no-such-file-or-directory-linux-error/  
+
+* **Install QEMU**
     * To emulate RISC-V hardware on x86_64
     * https://github.com/qemu/qemu
     * `qemu` package in Void Linux
