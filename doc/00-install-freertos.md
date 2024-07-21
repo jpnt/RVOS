@@ -38,16 +38,16 @@
     * For this project its best to stick with a stable version,
       FreeRTOSv202212.01 was the version used.
     * Source code organization: https://www.freertos.org/a00017.html
-    **Other useful links:** 
-    * Quick start: https://www.freertos.org/FreeRTOS-quick-start-guide.html
-    * FreeRTOS on RISC-V: https://www.freertos.org/Using-FreeRTOS-on-RISC-V.html
+    * **Other useful links:** 
+       * Quick start: https://www.freertos.org/FreeRTOS-quick-start-guide.html
+       * FreeRTOS on RISC-V: https://www.freertos.org/Using-FreeRTOS-on-RISC-V.html
 
 
 ## 3. Compiling FreeRTOS and running it on QEMU
 
 * Test a demo first
     * Change directory to FreeRTOSv202212.01/FreeRTOS/Demo/RISC-V_RV32_QEMU_VIRT_GCC
-    **Read instructions in the README.md in the directory**
+    * **Read instructions in the README.md in the directory**
     * *Important step:* Add path of toolchain that is described above section, such as: export PATH="/opt/riscv/bin:${PATH}"
     * Edit Makefile and set toolchain if necessary, then compile. Instructions at README.md
         * If error: main.c:53: Error: unrecognized opcode `csrw mtvec,a5', extension `zicsr' required
