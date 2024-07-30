@@ -59,9 +59,5 @@
         -mon chardev=con,mode=readline -bios none \
         -smp 4 -kernel ./build/gcc/output/RTOSDemo.elf
     ```
-* SiFive HiFive Unleashed (sifive_u) platform
-    * Already in this repository
-    * Make sure your qemu supports it
-    ```sh
-    qemu-system-riscv32 -machine help
-    ```
+* Demo chosen for this project
+    * See 01-hardware-platform.md
