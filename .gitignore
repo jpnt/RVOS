@@ -54,3 +54,14 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+#Ignore the Debug directory
+Debug/
+
+#Ignore makefiles
+[mM]akefile
+
+#Ignore any file with .mk extension
+*.mk
+
+
