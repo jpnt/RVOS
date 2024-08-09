@@ -27,7 +27,7 @@
 
 * 'Zicsr' extension the defines the CSRs (Control and Status registers)
 
-* Memory-mapped registers (MMRs)
+* Memory-mapped registers
     * registers that are mapped to specific memory addresses rather than being part of the CSR space
     * access to these registers is done through regular memory read and write operations, 
       not through special CSR instructions.
@@ -39,20 +39,26 @@
     * accessed using specific instructions, their addresses are encoded within a
       12-bit field (4096 unique addresses)
 
+* Memory-mapped registers vs Control and Status registers
+    * CSRs (Control and Status Registers) are special-purpose registers within a 12-bit address space,
+      accessed via dedicated CSR instructions like csrrw. Memory-mapped registers (MMRs), like mtime, 
+      are accessed using standard load/store instructions at specific memory addresses outside the CSR 
+      space and typically handle hardware-related tasks.
 
-**NOTE**: there are many other CSRs, but for the scope of this project we will focus on performance measuring CSRs.
+# Identification and performance registers
 
-* Identification and performance CSRs
-    * Identity CSRs
-        * misa: Machine ISA: gives width of tge address of processor (32, 64 or 128 bits), and identifies included extensions
-        * mhardit: gives the integer ID of the hart currently being run
-    * Measurement CSRs
-        * mtime: Machine Time: 64 bit real time counter
-        * mtimecmp: Machine Time Compare: causes interrupt when mtime >= mtimecmp
-        * {m,s}counteren: {machine,supervisor} counter-enable
-        * mcycle: count clock cycles; 
-        * minstret: instructions retired
-        * mhpmcounter3...31: up to 29 events selected by programmer
+**NOTE**: there are many other CSRs, but for the scope of this project we will focus on performance measuring.
+
+* Identity registers
+    * misa: Machine ISA: gives width of tge address of processor (32, 64 or 128 bits), and identifies included extensions
+    * mhardit: gives the integer ID of the hart currently being run
+* Measurement registers
+    * mtime: Machine Time: 64 bit real time counter
+    * mtimecmp: Machine Time Compare: causes interrupt when mtime >= mtimecmp
+    * {m,s}counteren: {machine,supervisor} counter-enable
+    * mcycle: count clock cycles; 
+    * minstret: instructions retired
+    * mhpmcounter3...31: up to 29 events selected by programmer
 
 # RISC-V Core Timer Interrupt
 
@@ -64,6 +70,7 @@
 # Links
 
 * https://riscv.org/wp-content/uploads/2016/07/Tue0900_RISCV-20160712-Interrupts.pdf
+* http://www.jhauser.us/private/RISCV-AIA/riscv-interrupts-036.pdf
 * https://danielmangum.com/posts/risc-v-bytes-timer-interrupts/
 * https://danielmangum.com/posts/risc-v-bytes-privilege-levels/#control-and-status-registers-csrs
 * https://www.youtube.com/watch?v=pXwnRqehZV8
