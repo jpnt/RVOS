@@ -96,15 +96,15 @@
 to exclude the API function. */
 #define INCLUDE_vTaskPrioritySet		1
 #define INCLUDE_uxTaskPriorityGet		1
-#define INCLUDE_vTaskDelete				1
-#define INCLUDE_vTaskCleanUpResources	1
+#define INCLUDE_vTaskDelete			1
+#define INCLUDE_vTaskCleanUpResources		1
 #define INCLUDE_vTaskSuspend			1
 #define INCLUDE_vTaskDelayUntil			1
-#define INCLUDE_vTaskDelay				1
+#define INCLUDE_vTaskDelay			1
 #define INCLUDE_eTaskGetState			1
-#define INCLUDE_xTimerPendFunctionCall	1
-#define INCLUDE_xTaskAbortDelay				1
-#define INCLUDE_xTaskGetHandle				1
+#define INCLUDE_xTimerPendFunctionCall		1
+#define INCLUDE_xTaskAbortDelay			1
+#define INCLUDE_xTaskGetHandle			1
 #define INCLUDE_xSemaphoreGetMutexHolder	1
 
 /* Normal assert() semantics without relying on the provision of an assert.h

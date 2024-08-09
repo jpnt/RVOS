@@ -1,8 +1,8 @@
 TODO
 -> pratica
-* 1º passo: emular uma plataforma risc-v no qemu e correr o freertos
-* escolher qual computador emular
-* versao correta do freertos para as caracteristicas
+* 1º passo: emular uma plataforma risc-v no qemu e correr o freertos (DONE)
+* escolher qual computador emular (DONE)
+* versao correta do freertos para as caracteristicas (DONE)
 * como testar o performance e ver o overhead das syscalls, interrupt, context switch. ver livro"performance analysis and tuning"; quanto tempo demora a fazer fetch de uma instrucao? a executa-la? a escrever e a ler da memoria? quantos ciclos leva cada operacao?
 
 -> teoria

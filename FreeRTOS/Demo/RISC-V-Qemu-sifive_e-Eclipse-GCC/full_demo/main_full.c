@@ -146,35 +146,88 @@ volatile uint32_t ulRegTest1LoopCounter = 0UL, ulRegTest2LoopCounter = 0UL;
 
 /*-----------------------------------------------------------*/
 
-void main_full( void )
+
+static inline uint64_t read_mcycle(void)
 {
+	uint64_t cycle;
+	asm volatile ("rdcycle %0" : "=r"(cycle));
+	return cycle;
+}
+
+void sleep_ms(TickType_t n)
+{
+	TickType_t delay = pdMS_TO_TICKS(n);
+	vTaskDelay(delay);
+}
+
+void vTaskFunc(void *pvParameters)
+{
+	puts("Hello from vTaskFunc!\n");
+
+	uint64_t start_cycles, end_cycles;
+
+	start_cycles = read_mcycle();
+	sleep_ms(1);
+	// problem: does not reach here?!
+	end_cycles = read_mcycle();
+
+	volatile uint64_t result = end_cycles - start_cycles;
+
+	puts("Bye from vTaskFunc!\n");
+
+	vTaskDelete(NULL); /* prevent from running again */
+}
+
+void vTaskFunc2(void *pvParameters)
+{
+	puts("Hello from vTaskFunc2!\n");
+
+	puts("Bye from vTaskFunc2!\n");
+}
+
+
+void main_full(void)
+{
+	xTaskCreate(vTaskFunc, "MeasureTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
+	//xTaskCreate(vTaskFunc2, "DummyTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
+
+	vTaskStartScheduler();
+
+	puts("I shouldn't be here!\n");
+	for(;;);
+}
+	
+// did not delete old main_full (yet)
+//void main_full_old( void )
+//{
 	/* Create the register check tasks, as described at the top of this	file.
 	Use xTaskCreateStatic() to create a task using only statically allocated
 	memory. */
-	xTaskCreate( prvRegTestTaskEntry1, 			/* The function that implements the task. */
-				 "Reg1", 						/* The name of the task. */
-				 mainREG_TEST_STACK_SIZE_WORDS, /* Size of stack to allocate for the task - in words not bytes!. */
-				 mainREG_TEST_TASK_1_PARAMETER, /* Parameter passed into the task. */
-				 tskIDLE_PRIORITY, 				/* Priority of the task. */
-				 NULL );						/* Can be used to pass out a handle to the created task. */
-	xTaskCreate( prvRegTestTaskEntry2, "Reg2", mainREG_TEST_STACK_SIZE_WORDS, mainREG_TEST_TASK_2_PARAMETER, tskIDLE_PRIORITY, NULL );
+	//xTaskCreate( prvRegTestTaskEntry1, 			/* The function that implements the task. */
+	//			 "Reg1", 						/* The name of the task. */
+	//			 mainREG_TEST_STACK_SIZE_WORDS, /* Size of stack to allocate for the task - in words not bytes!. */
+	//			 mainREG_TEST_TASK_1_PARAMETER, /* Parameter passed into the task. */
+	//			 tskIDLE_PRIORITY, 				/* Priority of the task. */
+	//			 NULL );						/* Can be used to pass out a handle to the created task. */
+	//xTaskCreate( prvRegTestTaskEntry2, "Reg2", mainREG_TEST_STACK_SIZE_WORDS, mainREG_TEST_TASK_2_PARAMETER, tskIDLE_PRIORITY, NULL );
 
 	/* Start all the other standard demo/test tasks.  They have no particular
 	functionality, but do demonstrate how to use the FreeRTOS API and test the
 	kernel port. */
-	vStartDynamicPriorityTasks();
-	vCreateBlockTimeTasks();
-	vStartRecursiveMutexTasks();
-	vStartTimerDemoTask( mainTIMER_TEST_PERIOD );
-	vStartEventGroupTasks();
-	vStartTaskNotifyTask();
+	//vStartDynamicPriorityTasks();
+	//vCreateBlockTimeTasks();
+	//vStartRecursiveMutexTasks();
+	//vStartTimerDemoTask( mainTIMER_TEST_PERIOD );
+	//vStartEventGroupTasks();
+	//vStartTaskNotifyTask();
 
 	/* Create the task that performs the 'check' functionality,	as described at
 	the top of this file. */
-	xTaskCreate( prvCheckTask, "Check", mainCHECK_TASK_STACK_SIZE_WORDS, NULL, mainCHECK_TASK_PRIORITY, NULL );
+	//xTaskCreate( prvCheckTask, "Check", mainCHECK_TASK_STACK_SIZE_WORDS, NULL, mainCHECK_TASK_PRIORITY, NULL );
 
 	/* Start the scheduler. */
-	vTaskStartScheduler();
+	//vTaskStartScheduler();
+
 
 	/* If all is well, the scheduler will now be running, and the following
 	line will never be reached.  If the following line does execute, then
@@ -182,8 +235,8 @@ void main_full( void )
 	timer tasks to be created.  See the memory management section on the
 	FreeRTOS web site for more details on the FreeRTOS heap
 	http://www.freertos.org/a00111.html. */
-	for( ;; );
-}
+	//for( ;; );
+//}
 /*-----------------------------------------------------------*/
 
 static void prvCheckTask( void *pvParameters )
