@@ -18,6 +18,13 @@
         L3         8M       8M    8 Unified         3 16384        1             64
         ```
 
+# Curiosities
+
+* How a real time clock (RTC) works?
+    * https://youtu.be/cCBu2VN0fu0?si=gIg-uPtx2GFrovnM&t=168
+
+# Links
+
 * Useful links to keep in mind:
    * https://github.com/qemu/qemu/blob/master/target/riscv/cpu.c
    * https://lore.kernel.org/all/15d848da-6ebe-4b85-bd7e-e2a04abe0399@Spark/T/
