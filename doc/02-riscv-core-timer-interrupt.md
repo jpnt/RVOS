@@ -74,6 +74,7 @@
 * https://danielmangum.com/posts/risc-v-bytes-timer-interrupts/
 * https://danielmangum.com/posts/risc-v-bytes-privilege-levels/#control-and-status-registers-csrs
 * https://www.youtube.com/watch?v=pXwnRqehZV8
+* https://www.youtube.com/watch?v=Vpmtm5O8CJY
 * https://github.com/riscv/riscv-isa-manual
 * http://www.riscvbook.com
 * https://www.freertos.org/Using-FreeRTOS-on-RISC-V

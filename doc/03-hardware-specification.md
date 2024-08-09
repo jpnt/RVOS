@@ -20,6 +20,9 @@
   * The access latency from a core to its own DTIM is two clock cycles for full words 
     and three clock cycles for smaller quantities
 
+* 32.768 MHz real-time clock (rtc)
+  * 32768 cycles per sec
+
 # Links
 
-* https://sifive.cdn.prismic.io/sifive/034760b5-ac6a-4b1c-911c-f4148bb2c4a5_fe310-g002-v1p5.pdf (Chapter 3)
+* https://sifive.cdn.prismic.io/sifive/034760b5-ac6a-4b1c-911c-f4148bb2c4a5_fe310-g002-v1p5.pdf (Chapter 3, 16)
