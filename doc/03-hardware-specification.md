@@ -35,7 +35,7 @@
     and three clock cycles for smaller quantities
 
 * 32.768 MHz real-time clock (rtc)
-  * 32768 cycles per sec
+  * 32,768,000 cycles per sec
 
 # Links
 
