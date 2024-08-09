@@ -18,14 +18,14 @@
   while a CPU cycle is the shortest unit of time defined by the processor's clock frequency.
 
 * There are 3 standard sources of interrupts
-    1. Software: triggered by storing to a memory-mapped register (interprocessor interrupt)
+    1. Software: triggered by storing to a memory-mapped register (used for interprocessor interrupt,
+       or put simply one hart interrupts another hart)
     2. Timer: raised when a hart's (hardware thread) time comparator (mtimecmp) >= real-time counter (mtime)
     3. External: raised by platform-level interrupt controller (where external devices are attached)
 
 # Control and Status Registers (CSRs)
 
-* 'Zicsr' extension for CSR instructions
-    * defines CSRs (Control and Status registers)
+* 'Zicsr' extension the defines the CSRs (Control and Status registers)
 
 * Memory-mapped registers (MMRs)
     * registers that are mapped to specific memory addresses rather than being part of the CSR space
@@ -38,6 +38,21 @@
     * form of memory-mapped register (however not every memory-mapped is a CSR)
     * accessed using specific instructions, their addresses are encoded within a
       12-bit field (4096 unique addresses)
+
+
+**NOTE**: there are many other CSRs, but for the scope of this project we will focus on performance measuring CSRs.
+
+* Identification and performance CSRs
+    * Identity CSRs
+        * misa: Machine ISA: gives width of tge address of processor (32, 64 or 128 bits), and identifies included extensions
+        * mhardit: gives the integer ID of the hart currently being run
+    * Measurement CSRs
+        * mtime: Machine Time: 64 bit real time counter
+        * mtimecmp: Machine Time Compare: causes interrupt when mtime >= mtimecmp
+        * {m,s}counteren: {machine,supervisor} counter-enable
+        * mcycle: count clock cycles; 
+        * minstret: instructions retired
+        * mhpmcounter3...31: up to 29 events selected by programmer
 
 # RISC-V Core Timer Interrupt
 
