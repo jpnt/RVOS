@@ -62,6 +62,7 @@
  */
 
 /* Standard includes. */
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -154,6 +155,12 @@ static inline uint64_t read_mcycle(void)
 	return cycle;
 }
 
+static inline uint64_t read_mtime(void)
+{
+	volatile uint64_t *mtime = (uint64_t *)0x0200BFF8; // TODO: find the adress of mtime
+	return *mtime;
+}
+
 void sleep_ms(TickType_t n)
 {
 	TickType_t delay = pdMS_TO_TICKS(n);
@@ -162,34 +169,49 @@ void sleep_ms(TickType_t n)
 
 void vTaskFunc(void *pvParameters)
 {
-	puts("Hello from vTaskFunc!\n");
+	vSendString("Hello from vTaskFunc!\n");
 
 	uint64_t start_cycles, end_cycles;
 
-	start_cycles = read_mcycle();
-	sleep_ms(1);
-	// problem: does not reach here?!
-	end_cycles = read_mcycle();
+	//start_cycles = read_mcycle();
+	//sleep_ms(1);
+	// TODO: does not reach here?!
+	//end_cycles = read_mcycle();
+
+	start_cycles = read_mtime();
+	vTaskDelay(pdMS_TO_TICKS(1000));
+	end_cycles = read_mtime();
 
 	volatile uint64_t result = end_cycles - start_cycles;
 
-	puts("Bye from vTaskFunc!\n");
+	vSendString("Bye from vTaskFunc!\n");
 
 	vTaskDelete(NULL); /* prevent from running again */
 }
 
 void vTaskFunc2(void *pvParameters)
 {
-	puts("Hello from vTaskFunc2!\n");
+	vSendString("Hello from vTaskFunc2!\n");
+	vTaskDelay(pdMS_TO_TICKS(1000));
+	vSendString("Bye from vTaskFunc2!\n");
+}
 
-	puts("Bye from vTaskFunc2!\n");
+
+static void vTaskFuncTest(void *pvParameters)
+{
+    (void)pvParameters;
+    vSendString("GOT IN\n\n");
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    vSendString("GOT OUT\n\n");
+
+    vTaskDelete(NULL);
 }
 
 
 void main_full(void)
 {
-	xTaskCreate(vTaskFunc, "MeasureTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
-	//xTaskCreate(vTaskFunc2, "DummyTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
+	xTaskCreate(vTaskFunc, "MeasureTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+	xTaskCreate(vTaskFunc2, "DummyTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
 
 	vTaskStartScheduler();
 

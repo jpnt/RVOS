@@ -111,6 +111,8 @@ static QueueHandle_t xQueue = NULL;
 
 void main_blinky( void )
 {
+	vSendString("\n\n\nRunning main_blinky()\n\n");
+
 	/* Create the queue. */
 	xQueue = xQueueCreate( mainQUEUE_LENGTH, sizeof( uint32_t ) );
 
@@ -138,6 +140,7 @@ void main_blinky( void )
 	FreeRTOS web site for more details on the FreeRTOS heap
 	http://www.freertos.org/a00111.html. */
 	for( ;; );
+
 }
 /*-----------------------------------------------------------*/
 
