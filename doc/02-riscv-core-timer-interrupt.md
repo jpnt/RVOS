@@ -20,8 +20,8 @@
 * There are 3 standard sources of interrupts
     1. Software: triggered by storing to a memory-mapped register (used for interprocessor interrupt,
        or put simply one hart interrupts another hart)
-    2. Timer: raised when a hart's (hardware thread) time comparator (mtimecmp) >= real-time counter (mtime)
-    3. External: raised by platform-level interrupt controller (where external devices are attached)
+    2. Timer: raised when a hart's (hardware thread) real-time counter (mtime) >= time comparator (mtimecmp)
+    3. External: raised by platform-level interrupt controller (PLIC) (where external devices are attached)
 
 # Control and Status Registers (CSRs)
 
@@ -32,12 +32,14 @@
     * access to these registers is done through regular memory read and write operations, 
       not through special CSR instructions.
 
-* CSRs
+* Control and Status Registers (CSRs)
     * special registers in the RISC-V architecture used to control and monitor 
       the processor's state and performance
     * form of memory-mapped register (however not every memory-mapped is a CSR)
     * accessed using specific instructions, their addresses are encoded within a
       12-bit field (4096 unique addresses)
+    * all CSR instruction atomically read/write a single CSR (e.g.: csrrw atomically swaps values in the
+      CSRs and integer registers)
 
 * Memory-mapped registers vs Control and Status registers
     * CSRs (Control and Status Registers) are special-purpose registers within a 12-bit address space,
@@ -78,3 +80,4 @@
 * https://github.com/riscv/riscv-isa-manual
 * http://www.riscvbook.com
 * https://www.freertos.org/Using-FreeRTOS-on-RISC-V
+* https://www.youtube.com/watch?v=jK3TLK4CpWk (PLIC)
