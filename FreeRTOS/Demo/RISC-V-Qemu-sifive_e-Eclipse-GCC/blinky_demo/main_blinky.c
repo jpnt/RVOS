@@ -102,13 +102,13 @@ void main_blinky(void);
 /*
  * The tasks as described in the comments at the top of this file.
  */
-static void prvQueueReceiveTask(void *pvParameters);
-static void prvQueueSendTask(void *pvParameters);
+// static void prvQueueReceiveTask(void *pvParameters);
+// static void prvQueueSendTask(void *pvParameters);
 
 /*-----------------------------------------------------------*/
 
 /* The queue used by both tasks. */
-static QueueHandle_t xQueue = NULL;
+// static QueueHandle_t xQueue = NULL;
 
 /*-----------------------------------------------------------*/
 
@@ -119,38 +119,97 @@ static QueueHandle_t xQueue = NULL;
 static void vTask1(void *pvParameters);
 static void vTask2(void *pvParameters);
 
+extern void vSendString(const char *pcString);
+
 /*--------------------------Testing--------------------------*/
+
+// Personalized itoa implementation
+
+void uint64_to_str(uint64_t value, char *str, int base)
+{
+	char *ptr = str, *ptr1 = str, tmp_char;
+	uint64_t tmp_value;
+
+	if (base < 2 || base > 36)
+	{
+		*str = '\0';
+		return;
+	}
+
+	do
+	{
+		tmp_value = value;
+		value /= base;
+		*ptr++ = "0123456789abcdefghijklmnopqrstuvwxyz"[tmp_value - value * base];
+	} while (value);
+
+	*ptr-- = '\0';
+
+	while (ptr1 < ptr)
+	{
+		tmp_char = *ptr;
+		*ptr-- = *ptr1;
+		*ptr1++ = tmp_char;
+	}
+}
 
 static inline uint64_t read_cycle(void)
 {
-
+	uint32_t cycle_low, cycle_high;
 	uint64_t cycle;
 
-	asm volatile("rdcycle %0" : "=r"(cycle));
+	// Read the high 32 bits first
+	asm volatile("rdcycleh %0" : "=r"(cycle_high));
+	// Read the low 32 bits
+	asm volatile("rdcycle %0" : "=r"(cycle_low));
+	// Read the high 32 bits again to ensure there was no overflow
+	// Note: It can happen that between 2 reads the counter was increased and probably overflowed and that would lead to huge differences and incorrect cycle count
+	uint32_t cycle_high2;
+	asm volatile("rdcycleh %0" : "=r"(cycle_high2));
 
+	// If the high bits changed, re-read the low bits
+	if (cycle_high != cycle_high2)
+	{
+		cycle_high = cycle_high2;
+		asm volatile("rdcycle %0" : "=r"(cycle_low));
+		vSendString("\nSecond high different!\n");
+	}
+
+	// This joins the high and low bits into a single value
+	// Note: cast cycle high from 32 to 64 bits zero extending it, shifts the high to occupy the most significant 32 bits leaving the least significant with zeros
+	// 		 OR operation (|) leads to cycle low taking the least significant 32 bits and replacing the zeros.
+
+	cycle = ((uint64_t)cycle_high << 32) | cycle_low;
 	return cycle;
 }
 
 static void vTask1(void *pvParameters)
 {
-
 	uint64_t start, end;
-	uint32_t high, low;
+	char buffer[64];
+
 	vSendString("\nIn task1\n");
-	for (int i = 0; i < 100; i++)
+
+	for (int i = 0; i < 10; i++)
 	{
-
 		start = read_cycle();
-		vTaskDelay(0);
+		vTaskDelay(0); // Simulate context switch delay
 		end = read_cycle();
-		high = (uint32_t)((end - start) >> 32);
-		low = (uint32_t)(end - start);
 
-		// printf("Context switch time: %lu %lu cycles\n", high, low); // Printing separately
-		vSendString("Here");
+		uint64_to_str(start, buffer, 10);
+		vSendString("\nStart cycle count: ");
+		vSendString(buffer);
+
+		uint64_to_str(end, buffer, 10);
+		vSendString("\nEnd cycle count: ");
+		vSendString(buffer);
+
+		uint64_to_str(end - start, buffer, 10);
+		vSendString("\nCycle difference count: ");
+		vSendString(buffer);
 	}
 
-	vSendString("Done with task1");
+	vSendString("\nDone with task1\n");
 	vTaskDelete(NULL);
 }
 
@@ -158,8 +217,7 @@ static void vTask2(void *pvParameters)
 {
 	while (1)
 	{
-		vSendString("2");
-		// vTaskDelay(0);
+		// vSendString("2");
 	}
 }
 
@@ -176,9 +234,8 @@ void main_blinky(void)
 	/* If all is well, the scheduler will now be running, and the following
 	line will never be reached.  If the following line does execute, then
 	there was insufficient FreeRTOS heap memory available for the Idle and/or
-	timer tasks to be created.  See the memory management section on the
-	FreeRTOS web site for more details on the FreeRTOS heap
-	http://www.freertos.org/a00111.html. */
+	timer tasks to be created.
+	*/
 	for (;;)
 		;
 }
