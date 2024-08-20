@@ -63,6 +63,7 @@
  */
 
 /* Standard includes. */
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -92,6 +93,13 @@ find the queue full. */
 #define mainQUEUE_LENGTH (1)
 
 /*-----------------------------------------------------------*/
+
+/* --------------- GLOBAL VARIABLES -------------------------*/
+
+static uint64_t start;
+static uint64_t end;
+
+/* --------------- ! GLOBAL VARIABLES -----------------------*/
 
 /*
  * Called by main when mainCREATE_SIMPLE_BLINKY_DEMO_ONLY is set to 1 in
@@ -221,12 +229,64 @@ static void vTask2(void *pvParameters)
 	}
 }
 
+static void vMeasureTaskSuspend1(void *pvParameters)
+{
+	for (int i = 0; i < 10; i++) {
+
+	vSendString("In vMeasureTaskSuspend1\n");
+
+	start = read_cycle();
+	vTaskSuspend(NULL); /* suspend itself */
+
+	}
+
+	for(;;);
+}
+
+static void vMeasureTaskSuspend2(void *pvParameters)
+{
+	for(int i = 0;i<10;i++) {
+
+	end = read_cycle();
+	char buf[64];
+
+	vSendString("In vMeasureTaskSuspend2\n");
+
+	uint64_to_str(end, buf, 10);
+	/* do not use libc functions like snprintf */
+	vSendString("End cycle count: ");
+	vSendString(buf);
+	vSendString("\n");
+
+	uint64_to_str(start, buf, 10);
+	/* do not use libc functions like snprintf */
+	vSendString("Start cycle count: ");
+	vSendString(buf);
+	vSendString("\n");
+
+
+	uint64_to_str(end - start, buf, 10);
+	/* do not use libc functions like snprintf */
+	vSendString("Diff: ");
+	vSendString(buf);
+	vSendString("\n");
+
+	vTaskDelay(0); /* switch to the first task again */
+
+	}
+
+	for(;;);
+}
+
 void main_blinky(void)
 {
 	vSendString("\n\n\nRunning main_blinky()\n\n");
 
-	xTaskCreate(vTask1, "Task 1", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 1), NULL);
-	xTaskCreate(vTask2, "Task 2", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 3), NULL);
+	//xTaskCreate(vTask1, "Task 1", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 1), NULL);
+	//xTaskCreate(vTask2, "Task 2", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 3), NULL);
+	xTaskCreate(vMeasureTaskSuspend1, "t1", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 1), NULL);
+	xTaskCreate(vMeasureTaskSuspend2, "t2", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 3), NULL);
+
 
 	/* Start the tasks and timer running. */
 	vTaskStartScheduler();
