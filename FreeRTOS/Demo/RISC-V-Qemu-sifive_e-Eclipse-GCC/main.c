@@ -114,6 +114,7 @@ int main( void )
     __asm__ volatile ( "csrw mtvec, %0" : : "r" ( freertos_risc_v_trap_handler ) );
 
     vSendString( "Starting" );
+    vSendString( "\n" );
 
     /* The mainCREATE_SIMPLE_BLINKY_DEMO_ONLY setting is described at the top
      * of this file. */

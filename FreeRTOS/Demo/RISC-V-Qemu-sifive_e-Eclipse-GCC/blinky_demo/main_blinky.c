@@ -96,8 +96,8 @@ find the queue full. */
 
 /* --------------- GLOBAL VARIABLES -------------------------*/
 
-static uint64_t start;
-static uint64_t end;
+TaskHandle_t xHandle;
+static volatile uint64_t start = 0, end = 0;
 
 /* --------------- ! GLOBAL VARIABLES -----------------------*/
 
@@ -229,62 +229,45 @@ static void vTask2(void *pvParameters)
 	}
 }
 
+/* Task 1: Measures the overhead of vTaskSuspend and context switch */
 static void vMeasureTaskSuspend1(void *pvParameters)
 {
-	for (int i = 0; i < 10; i++) {
+	int i;
+	char buf[64];
 
-	vSendString("In vMeasureTaskSuspend1\n");
+	for (i = 0; i < 1000; i++) {
+		//vSendString("In vMeasureTaskSuspend1\n");
 
-	start = read_cycle();
-	vTaskSuspend(NULL); /* suspend itself */
+		start = read_cycle();
+		vTaskSuspend(NULL);
+		end = read_cycle();
 
+		uint64_to_str(end - start, buf, 10);
+		vSendString(buf);
+		vSendString("\n");
+		//vTaskDelay(10);
 	}
 
 	for(;;);
 }
 
+/* Task 2: Resumes Task 1 */
 static void vMeasureTaskSuspend2(void *pvParameters)
 {
-	for(int i = 0;i<10;i++) {
-
-	end = read_cycle();
-	char buf[64];
-
-	vSendString("In vMeasureTaskSuspend2\n");
-
-	uint64_to_str(end, buf, 10);
-	/* do not use libc functions like snprintf */
-	vSendString("End cycle count: ");
-	vSendString(buf);
-	vSendString("\n");
-
-	uint64_to_str(start, buf, 10);
-	/* do not use libc functions like snprintf */
-	vSendString("Start cycle count: ");
-	vSendString(buf);
-	vSendString("\n");
-
-
-	uint64_to_str(end - start, buf, 10);
-	/* do not use libc functions like snprintf */
-	vSendString("Diff: ");
-	vSendString(buf);
-	vSendString("\n");
-
-	vTaskDelay(0); /* switch to the first task again */
-
+	for(;;) {
+		//vSendString("In vMeasureTaskSuspend2\n");
+		vTaskResume(xHandle);
+		//vTaskDelay(10);
 	}
-
-	for(;;);
 }
 
 void main_blinky(void)
 {
-	vSendString("\n\n\nRunning main_blinky()\n\n");
+	//vSendString("\n\n\nRunning main_blinky()\n\n");
 
 	//xTaskCreate(vTask1, "Task 1", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 1), NULL);
 	//xTaskCreate(vTask2, "Task 2", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 3), NULL);
-	xTaskCreate(vMeasureTaskSuspend1, "t1", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 1), NULL);
+	xTaskCreate(vMeasureTaskSuspend1, "t1", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 1), &xHandle);
 	xTaskCreate(vMeasureTaskSuspend2, "t2", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 3), NULL);
 
 
