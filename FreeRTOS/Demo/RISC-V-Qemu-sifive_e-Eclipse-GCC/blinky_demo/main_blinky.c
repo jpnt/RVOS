@@ -98,6 +98,7 @@ find the queue full. */
 
 TaskHandle_t xHandle;
 static volatile uint64_t start = 0, end = 0;
+static QueueHandle_t cycles_queue;
 
 /* --------------- ! GLOBAL VARIABLES -----------------------*/
 
@@ -196,33 +197,35 @@ static void vTask1(void *pvParameters)
 	uint64_t start, end;
 	char buffer[64];
 
-	vSendString("\nIn task1\n");
+	//vSendString("\nIn task1\n");
 
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 1000; i++)
 	{
 		start = read_cycle();
 		vTaskDelay(0); // Simulate context switch delay
-		end = read_cycle();
+		//end = read_cycle();
 
-		uint64_to_str(start, buffer, 10);
-		vSendString("\nStart cycle count: ");
-		vSendString(buffer);
+		//uint64_to_str(start, buffer, 10);
+		//vSendString("\nStart cycle count: ");
+		//vSendString(buffer);
 
-		uint64_to_str(end, buffer, 10);
-		vSendString("\nEnd cycle count: ");
-		vSendString(buffer);
+		//uint64_to_str(end, buffer, 10);
+		//vSendString("\nEnd cycle count: ");
+		//vSendString(buffer);
 
 		uint64_to_str(end - start, buffer, 10);
-		vSendString("\nCycle difference count: ");
+		//vSendString("\nCycle difference count: ");
 		vSendString(buffer);
+		vSendString("\n");
 	}
 
-	vSendString("\nDone with task1\n");
+	//vSendString("\nDone with task1\n");
 	vTaskDelete(NULL);
 }
 
 static void vTask2(void *pvParameters)
 {
+	end = read_cycle();
 	while (1)
 	{
 		// vSendString("2");
@@ -240,7 +243,6 @@ static void vMeasureTaskSuspend1(void *pvParameters)
 
 		start = read_cycle();
 		vTaskSuspend(NULL);
-		end = read_cycle();
 
 		uint64_to_str(end - start, buf, 10);
 		vSendString(buf);
@@ -255,6 +257,9 @@ static void vMeasureTaskSuspend1(void *pvParameters)
 static void vMeasureTaskSuspend2(void *pvParameters)
 {
 	for(;;) {
+		/* Measure cycles immedialy after context switch */
+		end = read_cycle();
+
 		//vSendString("In vMeasureTaskSuspend2\n");
 		vTaskResume(xHandle);
 		//vTaskDelay(10);
