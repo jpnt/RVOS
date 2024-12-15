@@ -72,6 +72,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
+#include "semphr.h"
 
 /*Other includes*/
 #include "inttypes.h"
@@ -124,11 +125,16 @@ void main_blinky(void);
 /*--------------------------Testing--------------------------*/
 
 #define mainTEST_STACK_SIZE_WORDS 85
+#define NUM_MEASUREMENTS 53
 
 static void vTask1(void *pvParameters);
 static void vTask2(void *pvParameters);
 
 extern void vSendString(const char *pcString);
+
+static SemaphoreHandle_t xSemaphore = NULL;
+uint64_t sem_give_times[NUM_MEASUREMENTS];
+uint64_t sem_take_times[NUM_MEASUREMENTS];
 
 /*--------------------------Testing--------------------------*/
 
@@ -197,29 +203,29 @@ static void vTask1(void *pvParameters)
 	uint64_t start, end;
 	char buffer[64];
 
-	//vSendString("\nIn task1\n");
+	// vSendString("\nIn task1\n");
 
 	for (int i = 0; i < 1000; i++)
 	{
 		start = read_cycle();
 		vTaskDelay(0); // Simulate context switch delay
-		//end = read_cycle();
+		// end = read_cycle();
 
-		//uint64_to_str(start, buffer, 10);
-		//vSendString("\nStart cycle count: ");
-		//vSendString(buffer);
+		// uint64_to_str(start, buffer, 10);
+		// vSendString("\nStart cycle count: ");
+		// vSendString(buffer);
 
-		//uint64_to_str(end, buffer, 10);
-		//vSendString("\nEnd cycle count: ");
-		//vSendString(buffer);
+		// uint64_to_str(end, buffer, 10);
+		// vSendString("\nEnd cycle count: ");
+		// vSendString(buffer);
 
 		uint64_to_str(end - start, buffer, 10);
-		//vSendString("\nCycle difference count: ");
+		// vSendString("\nCycle difference count: ");
 		vSendString(buffer);
 		vSendString("\n");
 	}
 
-	//vSendString("\nDone with task1\n");
+	// vSendString("\nDone with task1\n");
 	vTaskDelete(NULL);
 }
 
@@ -238,8 +244,9 @@ static void vMeasureTaskSuspend1(void *pvParameters)
 	int i;
 	char buf[64];
 
-	for (i = 0; i < 1000; i++) {
-		//vSendString("In vMeasureTaskSuspend1\n");
+	for (i = 0; i < 1000; i++)
+	{
+		// vSendString("In vMeasureTaskSuspend1\n");
 
 		start = read_cycle();
 		vTaskSuspend(NULL);
@@ -247,34 +254,151 @@ static void vMeasureTaskSuspend1(void *pvParameters)
 		uint64_to_str(end - start, buf, 10);
 		vSendString(buf);
 		vSendString("\n");
-		//vTaskDelay(10);
+		// vTaskDelay(10);
 	}
 
-	for(;;);
+	for (;;)
+		;
 }
 
 /* Task 2: Resumes Task 1 */
 static void vMeasureTaskSuspend2(void *pvParameters)
 {
-	for(;;) {
+	for (;;)
+	{
 		/* Measure cycles immedialy after context switch */
 		end = read_cycle();
 
-		//vSendString("In vMeasureTaskSuspend2\n");
+		// vSendString("In vMeasureTaskSuspend2\n");
 		vTaskResume(xHandle);
-		//vTaskDelay(10);
+		// vTaskDelay(10);
 	}
+}
+
+void vMeasureSemaphoreTime(void *pvParameters)
+{
+	char buffer[64];
+
+	for (int i = 0; i < NUM_MEASUREMENTS; i++)
+	{
+		// Measure xSemaphoreGive
+		start = read_cycle();
+		xSemaphoreGive(xSemaphore);
+		end = read_cycle();
+		sem_give_times[i] = end - start;
+
+		// Measure xSemaphoreTake
+		start = read_cycle();
+		xSemaphoreTake(xSemaphore, 0); // Non-blocking take
+		end = read_cycle();
+		sem_take_times[i] = end - start;
+	}
+
+	vSendString("Give Cycles = \n");
+	for (int i = 0; i < NUM_MEASUREMENTS; i++)
+	{
+		uint64_to_str(sem_give_times[i], buffer, 10);
+		vSendString(buffer);
+		vSendString("\n");
+	}
+
+	vSendString("Take Cycles = \n");
+	for (int i = 0; i < NUM_MEASUREMENTS; i++)
+	{
+
+		uint64_to_str(sem_take_times[i], buffer, 10);
+		vSendString(buffer);
+		vSendString("\n");
+	}
+
+	vTaskDelete(NULL);
+}
+
+/* Task 1: Give Task */
+void vSemaphoreGiveTask(void *pvParameters)
+{
+	char buffer[64];
+	for (int i = 0; i < NUM_MEASUREMENTS; i++)
+	{
+		// Measure xSemaphoreGive
+		start = read_cycle();
+		xSemaphoreGive(xSemaphore);
+		end = read_cycle();
+		sem_give_times[i] = end - start;
+
+		vSendString("Give Task: Semaphore given.\n");
+
+		// Notify the Take Task
+		xTaskNotifyGive((TaskHandle_t)pvParameters);
+
+		// Delay to allow Take Task to process
+		vTaskDelay(0);
+	}
+
+	// Print results for Give Task
+	vSendString("\nGive Task Results:\n");
+	for (int i = 0; i < NUM_MEASUREMENTS; i++)
+	{
+		uint64_to_str(sem_give_times[i], buffer, 10);
+		vSendString(buffer);
+		vSendString("\n");
+	}
+
+	vTaskDelete(NULL);
+}
+
+/* Task 2: Take Task */
+void vSemaphoreTakeTask(void *pvParameters)
+{
+	char buffer[64];
+	for (int i = 0; i < NUM_MEASUREMENTS; i++)
+	{
+		// Wait for notification from Give Task
+		ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+		// Measure xSemaphoreTake
+		start = read_cycle();
+		xSemaphoreTake(xSemaphore, 0); // Non-blocking take
+		end = read_cycle();
+		sem_take_times[i] = end - start;
+
+		vSendString("Take Task: Semaphore taken.\n");
+	}
+
+	// Print results for Take Task
+	vSendString("\nTake Task Results:\n");
+	for (int i = 0; i < NUM_MEASUREMENTS; i++)
+	{
+		uint64_to_str(sem_take_times[i], buffer, 10);
+		vSendString(buffer);
+		vSendString("\n");
+	}
+
+	vTaskDelete(NULL);
 }
 
 void main_blinky(void)
 {
-	//vSendString("\n\n\nRunning main_blinky()\n\n");
 
-	//xTaskCreate(vTask1, "Task 1", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 1), NULL);
-	//xTaskCreate(vTask2, "Task 2", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 3), NULL);
-	xTaskCreate(vMeasureTaskSuspend1, "t1", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 1), &xHandle);
-	xTaskCreate(vMeasureTaskSuspend2, "t2", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 3), NULL);
+	// Create the semaphore
+	xSemaphore = xSemaphoreCreateBinary();
+	configASSERT(xSemaphore != NULL);
 
+	/* Initially give the semaphore to make it available */
+	xSemaphoreGive(xSemaphore);
+
+	// vSendString("\n\n\nRunning main_blinky()\n\n");
+
+	// xTaskCreate(vTask1, "Task 1", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 1), NULL);
+	// xTaskCreate(vTask2, "Task 2", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 3), NULL);
+	// xTaskCreate(vMeasureTaskSuspend1, "t1", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 1), &xHandle);
+	// xTaskCreate(vMeasureTaskSuspend2, "t2", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 3), NULL);
+
+	// Create the measurement tasks
+	xTaskCreate(vSemaphoreTakeTask, "TakeTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, &xHandle);
+	xTaskCreate(vSemaphoreGiveTask, "GiveTask", configMINIMAL_STACK_SIZE, xHandle, tskIDLE_PRIORITY + 1, NULL);
+
+	// xTaskCreate(vMeasureSemaphoreTime, "MeasureSemTime", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL); //Semaphore times measuring within one task
 
 	/* Start the tasks and timer running. */
 	vTaskStartScheduler();
