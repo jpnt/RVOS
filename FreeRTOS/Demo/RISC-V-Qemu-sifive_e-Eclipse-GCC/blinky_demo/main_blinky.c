@@ -73,6 +73,7 @@
 #include "task.h"
 #include "queue.h"
 #include "semphr.h"
+#include "timers.h"
 
 /*Other includes*/
 #include "inttypes.h"
@@ -125,7 +126,7 @@ void main_blinky(void);
 /*--------------------------Testing--------------------------*/
 
 #define mainTEST_STACK_SIZE_WORDS 85
-#define NUM_MEASUREMENTS 53
+#define NUM_MEASUREMENTS 52
 
 static void vTask1(void *pvParameters);
 static void vTask2(void *pvParameters);
@@ -133,8 +134,11 @@ static void vTask2(void *pvParameters);
 extern void vSendString(const char *pcString);
 
 static SemaphoreHandle_t xSemaphore = NULL;
+static TimerHandle_t xTestTimer;
 uint64_t sem_give_times[NUM_MEASUREMENTS];
 uint64_t sem_take_times[NUM_MEASUREMENTS];
+uint64_t timer_start_times[NUM_MEASUREMENTS];
+uint64_t timer_stop_times[NUM_MEASUREMENTS];
 
 /*--------------------------Testing--------------------------*/
 
@@ -314,7 +318,6 @@ void vMeasureSemaphoreTime(void *pvParameters)
 	vTaskDelete(NULL);
 }
 
-/* Task 1: Give Task */
 void vSemaphoreGiveTask(void *pvParameters)
 {
 	char buffer[64];
@@ -347,7 +350,6 @@ void vSemaphoreGiveTask(void *pvParameters)
 	vTaskDelete(NULL);
 }
 
-/* Task 2: Take Task */
 void vSemaphoreTakeTask(void *pvParameters)
 {
 	char buffer[64];
@@ -377,6 +379,55 @@ void vSemaphoreTakeTask(void *pvParameters)
 	vTaskDelete(NULL);
 }
 
+void vTestTimerCallback(TimerHandle_t xTimer)
+{
+}
+
+/* Task for measuring xTimerStart and xTimerStop */
+void vMeasureTimerTask(void *pvParameters)
+{
+	char buffer[64];
+
+	for (int i = 0; i < NUM_MEASUREMENTS; i++)
+	{
+		// Measure xTimerStart
+		start = read_cycle();
+		xTimerStart(xTestTimer, 0); // Start the timer
+		end = read_cycle();
+		timer_start_times[i] = end - start;
+
+		vSendString("Timer Start: Measured.\n");
+
+		// Measure xTimerStop
+		start = read_cycle();
+		xTimerStop(xTestTimer, 0); // Stop the timer
+		end = read_cycle();
+		timer_stop_times[i] = end - start;
+
+		vSendString("Timer Stop: Measured.\n");
+	}
+
+	// Print results for xTimerStart
+	vSendString("\nTimer Start Times:\n");
+	for (int i = 0; i < NUM_MEASUREMENTS; i++)
+	{
+		uint64_to_str(timer_start_times[i], buffer, 10);
+		vSendString(buffer);
+		vSendString("\n");
+	}
+
+	// Print results for xTimerStop
+	vSendString("\nTimer Stop Times:\n");
+	for (int i = 0; i < NUM_MEASUREMENTS; i++)
+	{
+		uint64_to_str(timer_stop_times[i], buffer, 10);
+		vSendString(buffer);
+		vSendString("\n");
+	}
+
+	vTaskDelete(NULL);
+}
+
 void main_blinky(void)
 {
 
@@ -387,6 +438,15 @@ void main_blinky(void)
 	/* Initially give the semaphore to make it available */
 	xSemaphoreGive(xSemaphore);
 
+	xTestTimer = xTimerCreate(
+		"TestTimer",		 // Name
+		pdMS_TO_TICKS(1000), // Timer period (1 second)
+		pdFALSE,			 // Auto-reload (single-shot timer)
+		(void *)0,			 // Timer ID (not used here)
+		vTestTimerCallback); // Callback function
+
+	configASSERT(xTestTimer != NULL);
+
 	// vSendString("\n\n\nRunning main_blinky()\n\n");
 
 	// xTaskCreate(vTask1, "Task 1", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 1), NULL);
@@ -395,10 +455,12 @@ void main_blinky(void)
 	// xTaskCreate(vMeasureTaskSuspend2, "t2", mainTEST_STACK_SIZE_WORDS, NULL, (configMAX_PRIORITIES - 3), NULL);
 
 	// Create the measurement tasks
-	xTaskCreate(vSemaphoreTakeTask, "TakeTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, &xHandle);
-	xTaskCreate(vSemaphoreGiveTask, "GiveTask", configMINIMAL_STACK_SIZE, xHandle, tskIDLE_PRIORITY + 1, NULL);
+	// xTaskCreate(vSemaphoreTakeTask, "TakeTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, &xHandle);
+	// xTaskCreate(vSemaphoreGiveTask, "GiveTask", configMINIMAL_STACK_SIZE, xHandle, tskIDLE_PRIORITY + 1, NULL);
 
 	// xTaskCreate(vMeasureSemaphoreTime, "MeasureSemTime", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL); //Semaphore times measuring within one task
+
+	xTaskCreate(vMeasureTimerTask, "MeasureTimerTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
 
 	/* Start the tasks and timer running. */
 	vTaskStartScheduler();
