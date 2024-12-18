@@ -74,6 +74,8 @@
 #include "queue.h"
 #include "semphr.h"
 #include "timers.h"
+#include "stream_buffer.h"
+
 
 /*Other includes*/
 #include "inttypes.h"
@@ -100,7 +102,9 @@ find the queue full. */
 
 TaskHandle_t xHandle;
 static volatile uint64_t start = 0, end = 0;
-static QueueHandle_t cycles_queue;
+/* static QueueHandle_t cycles_queue; */
+// streambufferhandle_t is just a pointer to streambufferdef_t
+StreamBufferHandle_t xStreamBuffer;
 
 /* --------------- ! GLOBAL VARIABLES -----------------------*/
 
@@ -116,10 +120,6 @@ void main_blinky(void);
 // static void prvQueueReceiveTask(void *pvParameters);
 // static void prvQueueSendTask(void *pvParameters);
 
-/*-----------------------------------------------------------*/
-
-/* The queue used by both tasks. */
-// static QueueHandle_t xQueue = NULL;
 
 /*-----------------------------------------------------------*/
 
@@ -127,6 +127,7 @@ void main_blinky(void);
 
 #define mainTEST_STACK_SIZE_WORDS 85
 #define NUM_MEASUREMENTS 52
+#define TEST_QUEUE_LEN 5
 
 static void vTask1(void *pvParameters);
 static void vTask2(void *pvParameters);
@@ -135,10 +136,13 @@ extern void vSendString(const char *pcString);
 
 static SemaphoreHandle_t xSemaphore = NULL;
 static TimerHandle_t xTestTimer;
+static QueueHandle_t xTestQueue;
 uint64_t sem_give_times[NUM_MEASUREMENTS];
 uint64_t sem_take_times[NUM_MEASUREMENTS];
 uint64_t timer_start_times[NUM_MEASUREMENTS];
 uint64_t timer_stop_times[NUM_MEASUREMENTS];
+uint64_t queue_send_times[NUM_MEASUREMENTS];
+uint64_t queue_receive_times[NUM_MEASUREMENTS];
 
 /*--------------------------Testing--------------------------*/
 
@@ -428,24 +432,70 @@ void vMeasureTimerTask(void *pvParameters)
 	vTaskDelete(NULL);
 }
 
+void vQueueSendTask(void *pvParameters)
+{
+	uint64_t start, end;
+    int32_t valueToSend = 42; // Example value
+    char buffer[64];
+
+    for (int i = 0; i < NUM_MEASUREMENTS; i++) {
+        /* Measure the overhead of sending to the queue */
+        start = read_cycle();
+        if (xQueueSend(xTestQueue, &valueToSend, 0) == pdPASS) {
+            end = read_cycle();
+            queue_send_times[i] = end - start;
+            //uint64_to_str(queue_send_times[i], buffer, 10);
+            //vSendString(buffer);
+			//vSendString("\n");
+        } else {
+            vSendString("Queue full, failed to send\n");
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10)); // Wait before trying again
+    }
+
+    vTaskDelete(NULL);
+}
+
+void vQueueReceiveTask(void *pvParameters) {
+    uint64_t start, end, diff;
+    int32_t receivedValue;
+    char buffer[64];
+
+    while (1) {
+        /* Measure the overhead of receiving from the queue */
+        start = read_cycle();
+        if (xQueueReceive(xTestQueue, &receivedValue, 0) == pdPASS) {
+            end = read_cycle();
+            diff = end - start;
+			uint64_to_str(diff, buffer, 10);
+            vSendString(buffer);
+			vSendString("\n");
+        }
+    }
+}
+
+
 void main_blinky(void)
 {
 
 	// Create the semaphore
-	xSemaphore = xSemaphoreCreateBinary();
-	configASSERT(xSemaphore != NULL);
+	// xSemaphore = xSemaphoreCreateBinary();
+	// configASSERT(xSemaphore != NULL);
 
 	/* Initially give the semaphore to make it available */
-	xSemaphoreGive(xSemaphore);
+	// xSemaphoreGive(xSemaphore);
 
-	xTestTimer = xTimerCreate(
-		"TestTimer",		 // Name
-		pdMS_TO_TICKS(1000), // Timer period (1 second)
-		pdFALSE,			 // Auto-reload (single-shot timer)
-		(void *)0,			 // Timer ID (not used here)
-		vTestTimerCallback); // Callback function
+	// xTestTimer = xTimerCreate(
+	// 	"TestTimer",		 // Name
+	// 	pdMS_TO_TICKS(1000), // Timer period (1 second)
+	// 	pdFALSE,			 // Auto-reload (single-shot timer)
+	// 	(void *)0,			 // Timer ID (not used here)
+	// 	vTestTimerCallback); // Callback function
 
-	configASSERT(xTestTimer != NULL);
+	// configASSERT(xTestTimer != NULL);
+
+	xTestQueue = xQueueCreate(TEST_QUEUE_LEN, sizeof(int));
 
 	// vSendString("\n\n\nRunning main_blinky()\n\n");
 
@@ -460,7 +510,23 @@ void main_blinky(void)
 
 	// xTaskCreate(vMeasureSemaphoreTime, "MeasureSemTime", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL); //Semaphore times measuring within one task
 
-	xTaskCreate(vMeasureTimerTask, "MeasureTimerTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+	// xTaskCreate(vMeasureTimerTask, "MeasureTimerTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+	
+
+	xTaskCreate(vQueueReceiveTask, "QueueReceiveTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 0, NULL);
+	xTaskCreate(vQueueSendTask, "QueueSendTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 0, NULL);
+
+	/* Print the default size of some structs, disable when measuring context switch overhead */
+	/* StreamBuffer */
+	//xStreamBuffer = xStreamBufferCreate(100, 1);
+	//if (!xStreamBuffer) return;
+	//printf("sizeof(StreamBuffer)=%d\n", sizeof(xStreamBuffer));
+	/* TCB */
+	//size_t before = xPortGetFreeHeapSize();
+	//xTaskCreate(vTask1, "TestTask", mainTEST_STACK_SIZE_WORDS, NULL, 0, NULL);
+	//size_t after = xPortGetFreeHeapSize();
+	//printf("TCB size + stack size: %zu\n", before - after);
+	//return;
 
 	/* Start the tasks and timer running. */
 	vTaskStartScheduler();
