@@ -444,9 +444,9 @@ void vQueueSendTask(void *pvParameters)
         if (xQueueSend(xTestQueue, &valueToSend, 0) == pdPASS) {
             end = read_cycle();
             queue_send_times[i] = end - start;
-            //uint64_to_str(queue_send_times[i], buffer, 10);
-            //vSendString(buffer);
-			//vSendString("\n");
+            uint64_to_str(queue_send_times[i], buffer, 10);
+            vSendString(buffer);
+			vSendString("\n");
         } else {
             vSendString("Queue full, failed to send\n");
         }
@@ -468,9 +468,9 @@ void vQueueReceiveTask(void *pvParameters) {
         if (xQueueReceive(xTestQueue, &receivedValue, 0) == pdPASS) {
             end = read_cycle();
             diff = end - start;
-			uint64_to_str(diff, buffer, 10);
-            vSendString(buffer);
-			vSendString("\n");
+			//uint64_to_str(diff, buffer, 10);
+            //vSendString(buffer);
+			//vSendString("\n");
         }
     }
 }
